@@ -98,9 +98,22 @@ class Download():
         :return: (pd.DataFrame,pd.DataFrame,pd.DataFrame)
         '''
         train_dataframe = self.df
-        test_dataframe = self.df.sample(frac=1).drop_duplicates(['userId'])
-        tmp_dataframe = pd.concat([train_dataframe, test_dataframe])
-        train_dataframe = tmp_dataframe.drop_duplicates(keep=False)
+        test_dataframe = None
+        '''
+        for i, s in self.df.groupby('userId'):
+            temp = s.sort_values('rating', ascending=False)[0:10]
+            temp2 = pd.concat((train_dataframe,temp))
+            train_dataframe = temp2.drop_duplicates(keep=False)
+            temp = pd.concat((test_dataframe, temp))
+            test_dataframe = temp.drop_duplicates(keep=False)
+        '''
+        for i in range(10):
+            tmp_dataframe = train_dataframe.sample(frac=1).drop_duplicates(['userId'])
+            test_dataframe = pd.concat([tmp_dataframe, test_dataframe])
+            tmp_dataframe2 = pd.concat([train_dataframe, tmp_dataframe])
+            train_dataframe = tmp_dataframe2.drop_duplicates(keep=False)
+
+        test_dataframe = test_dataframe.sort_values(by=['userId', 'rating'], ascending=[True, False])
 
         # explicit feedback -> implicit feedback
         # ignore warnings
@@ -180,4 +193,3 @@ class MovieLens(Dataset):
             users.append(u)
         print(f"sampled data: {len(users)}")
         return torch.tensor(users), torch.tensor(items)
-
