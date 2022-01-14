@@ -48,6 +48,7 @@ class Train():
                 print('|loss:{}|'.format((loss)))
                 print('|run time:{}|'.format(round(time.time()-t2, 4)))
                 b_i += 1
+                break
 
             print('|------------------------epoch loss------------------------|')
             print('|epoch loss: {}|'.format((total_loss/len(self.dataloader))))

@@ -174,7 +174,9 @@ class MovieLens(Dataset):
         df = self.df
         total_df = self.total_df
         users, items = [], []
-        user_item_set = set(zip(df['userId'], df['movieId']))
+        user_item_set = zip(df['userId'], df['movieId'])
+        if self.train is True:
+            user_item_set = set(zip(df['userId'], df['movieId']))
         total_user_item_set = set(zip(total_df['userId'], total_df['movieId']))
         all_movieIds = total_df['movieId'].unique()
         # negative feedback dataset ratio

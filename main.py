@@ -18,26 +18,16 @@ print(f'device: {device}')
 root_path = 'dataset'
 dataset = Download(root=root_path, file_size='100k', download=False)
 total_df, train_df, test_df = dataset.split_train_test()
-print(test_df)
-
 n_user = total_df['userId'].max()
 n_item = total_df['movieId'].max()
 
 train_set = MovieLens(train_df, total_df, train=True)
 test_set = MovieLens(test_df, total_df, train=False)
-for u, i in test_set:
-    print(u)
-    print(i)
 
 train_loader = DataLoader(train_set, batch_size=256, shuffle=True)
-test_loader = DataLoader(test_set, batch_size=10, shuffle=True)
+test_loader = DataLoader(test_set, batch_size=10, shuffle=False)
 
 sparse_lap_mat, eye_mat = Matrix(total_df).create_matrix()
-
-for u, i in test_loader:
-    print(u)
-    print(i)
-    break
 
 if __name__ == '__main__':
     model = NGCF(n_user=n_user,
@@ -52,6 +42,7 @@ if __name__ == '__main__':
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
     criterion = BPR(weight_decay=0.025, batch_size=256)
 
+    print(model.u_g_embeddings, model.i_g_embeddings)
     train = Train(model=model,
                   optimizer=optimizer,
                   criterion=criterion,
@@ -59,7 +50,7 @@ if __name__ == '__main__':
                   epochs=2,
                   device='cpu').train()
     print('train ended')
-
+    print(model.u_g_embeddings, model.i_g_embeddings)
     test = Test(model=model,
                 dataloader=test_df,
                 epochs=1,
