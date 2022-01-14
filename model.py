@@ -88,13 +88,13 @@ class NGCF(nn.Module):
         drop_lap_mat = t.sparse.FloatTensor(i, v, self.lap_mat.shape).to(self.lap_mat.device)
         return drop_lap_mat
 
-    def forward(self, users, pos_items, neg_items, node_dropout):
+    def forward(self, users, pos_items, neg_items, node_flag):
 
         ego_embedding = t.cat((self.user_embedding.weight, self.item_embedding.weight), dim=0)
         all_embedding = [ego_embedding]
 
         for i in range(self.n_layer):
-            if node_dropout:
+            if node_flag:
                 # node dropout laplacian matrix
                 drop_lap_mat = self.sparse_dropout()
             else:
@@ -121,8 +121,9 @@ class NGCF(nn.Module):
         self.u_g_embeddings = all_embedding[:self.n_user, :]
         self.i_g_embeddings = all_embedding[self.n_user:, :]
 
-        u_g_embeddings = self.u_g_embeddings[users - 1, :]
+        u_embeddings = self.u_g_embeddings[users - 1, :]
         pos_i_g_embeddings = self.i_g_embeddings[pos_items - 1, :]
-        neg_i_g_embeddings = self.i_g_embeddings[neg_items - 1, :]
-
-        return u_g_embeddings, pos_i_g_embeddings, neg_i_g_embeddings
+        neg_i_g_embeddings = t.empty(0)
+        if node_flag:
+            neg_i_g_embeddings = self.i_g_embeddings[neg_items - 1, :]
+        return u_embeddings, pos_i_g_embeddings, neg_i_g_embeddings

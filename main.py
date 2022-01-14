@@ -14,7 +14,6 @@ from experiment import Train, Test
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f'device: {device}')
 
-
 root_path = 'dataset'
 dataset = Download(root=root_path, file_size='100k', download=False)
 total_df, train_df, test_df = dataset.split_train_test()
@@ -42,17 +41,18 @@ if __name__ == '__main__':
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
     criterion = BPR(weight_decay=0.025, batch_size=256)
 
-    print(model.u_g_embeddings, model.i_g_embeddings)
     train = Train(model=model,
                   optimizer=optimizer,
                   criterion=criterion,
                   dataloader=train_loader,
-                  epochs=2,
+                  epochs=1,
                   device='cpu').train()
     print('train ended')
-    print(model.u_g_embeddings, model.i_g_embeddings)
+
     test = Test(model=model,
-                dataloader=test_df,
+                dataframe=test_df,
+                dataloader=test_loader,
                 epochs=1,
+                ks=10,
                 device='cpu')
     test.eval()
