@@ -26,6 +26,17 @@ test_set = MovieLens(test_df, total_df, train=False)
 train_loader = DataLoader(train_set, batch_size=256, shuffle=True)
 test_loader = DataLoader(test_set, batch_size=10, shuffle=False)
 
+for u, p, n in train_loader:
+    print(u.shape)
+    print(p.shape)
+    print(n.shape)
+    break
+for u, p in test_loader:
+    print(u.shape)
+    print(p.shape)
+    break
+
+
 sparse_lap_mat, eye_mat = Matrix(total_df).create_matrix()
 
 if __name__ == '__main__':
@@ -41,6 +52,14 @@ if __name__ == '__main__':
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
     criterion = BPR(weight_decay=0.025, batch_size=256)
 
+    test = Test(model=model,
+                dataframe=test_df,
+                dataloader=test_loader,
+                epochs=1,
+                ks=10,
+                device='cpu')
+    test.eval()
+
     train = Train(model=model,
                   optimizer=optimizer,
                   criterion=criterion,
@@ -49,10 +68,4 @@ if __name__ == '__main__':
                   device='cpu').train()
     print('train ended')
 
-    test = Test(model=model,
-                dataframe=test_df,
-                dataloader=test_loader,
-                epochs=1,
-                ks=10,
-                device='cpu')
-    test.eval()
+

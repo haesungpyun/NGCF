@@ -47,7 +47,7 @@ class NGCF(nn.Module):
         self.node_dropout_list = nn.ModuleList()
         self.mess_dropout_list = nn.ModuleList()
 
-        self.lap_mat = lap_mat
+        self.L = lap_mat
         self.eye_mat = eye_mat
 
         self.set_layers()
@@ -78,52 +78,52 @@ class NGCF(nn.Module):
             if self.mess_dropout is not None:
                 self.mess_dropout_list.append(nn.Dropout(p=self.mess_dropout[k]))
 
-    def sparse_dropout(self):
-        node_mask = nn.Dropout(self.node_dropout)(t.tensor(np.ones(self.lap_mat._nnz()))).type(t.bool)
-        i = self.lap_mat._indices()
-        v = self.lap_mat._values()
+    def sparse_dropout(self, mat):
+        node_mask = nn.Dropout(self.node_dropout)(t.tensor(np.ones(mat._nnz()))).type(t.bool)
+        i = mat._indices()
+        v = mat._values()
         i = i[:, node_mask]
         v = v[node_mask]
 
-        drop_lap_mat = t.sparse.FloatTensor(i, v, self.lap_mat.shape).to(self.lap_mat.device)
-        return drop_lap_mat
+        drop_mat = t.sparse.FloatTensor(i, v, mat.shape).to(self.device)
+        return drop_mat
 
     def forward(self, users, pos_items, neg_items, node_flag):
 
-        ego_embedding = t.cat((self.user_embedding.weight, self.item_embedding.weight), dim=0)
-        all_embedding = [ego_embedding]
+        E = t.cat((self.user_embedding.weight, self.item_embedding.weight), dim=0)
+        all_E = [E]
 
         for i in range(self.n_layer):
             if node_flag:
                 # node dropout laplacian matrix
-                drop_lap_mat = self.sparse_dropout()
+                L = self.sparse_dropout(self.L)
             else:
-                drop_lap_mat = self.lap_mat
+                L = self.L
 
-            L_I_E = t.mm(drop_lap_mat + self.eye_mat, ego_embedding)
+            L_I_E = t.mm(L + self.eye_mat, E)
             L_I_E_W1 = self.w1_list[i](L_I_E)
 
-            L_E = t.mm(drop_lap_mat, ego_embedding)
-            L_E_E = L_E * ego_embedding
+            L_E = t.mm(L, E)
+            L_E_E = L_E * E
             L_I_E_W2 = self.w2_list[i](L_E_E)
 
             message_embedding = L_I_E_W1 + L_I_E_W2
 
-            ego_embedding = nn.LeakyReLU(negative_slope=0.2)(message_embedding)
+            E = nn.LeakyReLU(negative_slope=0.2)(message_embedding)
 
-            ego_embedding = self.mess_dropout_list[i](ego_embedding)
+            E = self.mess_dropout_list[i](E)
 
-            norm_embedding = F.normalize(ego_embedding, p=2, dim=1)
+            norm_embedding = F.normalize(E, p=2, dim=1)
 
-            all_embedding += [norm_embedding]
+            all_E += [norm_embedding]
 
-        all_embedding = t.cat(all_embedding, dim=1)
-        self.u_g_embeddings = all_embedding[:self.n_user, :]
-        self.i_g_embeddings = all_embedding[self.n_user:, :]
+        all_E = t.cat(all_E, dim=1)
+        self.all_users_emb = all_E[:self.n_user, :]
+        self.all_items_emb = all_E[self.n_user:, :]
 
-        u_embeddings = self.u_g_embeddings[users - 1, :]
-        pos_i_g_embeddings = self.i_g_embeddings[pos_items - 1, :]
-        neg_i_g_embeddings = t.empty(0)
+        u_embeddings = self.all_users_emb[users - 1, :]
+        pos_i_embeddings = self.all_items_emb[pos_items - 1, :]
+        neg_i_embeddings = t.empty(0)
         if node_flag:
-            neg_i_g_embeddings = self.i_g_embeddings[neg_items - 1, :]
-        return u_embeddings, pos_i_g_embeddings, neg_i_g_embeddings
+            neg_i_embeddings = self.all_items_emb[neg_items - 1, :]
+        return u_embeddings, pos_i_embeddings, neg_i_embeddings

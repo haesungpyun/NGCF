@@ -75,14 +75,24 @@ class Test():
     def eval(self):
         print("""-------------Evaluation--------------""")
         with t.no_grad():
-            for u_id, pos_item in self.dataloader:
-                u_embeds, pos_i_embeds, _ = self.model(u_id, pos_item, t.empty(0), False)
 
-                print(self.model.u_g_embeddings.shape, self.model.i_g_embeddings.t().shape)
-                scores = t.mm(self.model.u_g_embeddings, self.model.i_g_embeddings.t())
-                _, pred_idx = t.topk(pos_i_embeds, self.ks)
+            for u_id, pos_items in self.dataloader:
+                u_id, pos_items = u_id.to(self.device), pos_items.to(self.device)
 
-                recommends = t.take(pos_item, pred_idx)
+                u_embeds, pos_i_embeds, _ = self.model(users=u_id,
+                                                       pos_items=pos_items,
+                                                       neg_items=t.empty(0),
+                                                       node_flag=False).to(self.device)
+
+                trained_scores = t.mm(u_embeds, pos_i_embeds.T)
+                _, train_idx = t.topk(trained_scores[0], self.ks)
+                recommend = train_idx
+                '''
+                pred_scores = t.mm(u_embeds, pos_i_embeds.T)
+                _, pred_idx = t.topk(pred_scores[0], self.ks)
+                print(pred_idx)
+                '''
+
 
 
 
