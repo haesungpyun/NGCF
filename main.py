@@ -23,42 +23,26 @@ n_item = total_df['movieId'].max()
 train_set = MovieLens(train_df, total_df, train=True)
 test_set = MovieLens(test_df, total_df, train=False)
 
-train_loader = DataLoader(train_set, batch_size=256, shuffle=True)
+train_loader = DataLoader(train_set, batch_size=2048, shuffle=True)
 test_loader = DataLoader(test_set, batch_size=10, shuffle=False)
-
-for u, p, n in train_loader:
-    print(u.shape)
-    print(p.shape)
-    print(n.shape)
-    break
-for u, p in test_loader:
-    print(u.shape)
-    print(p.shape)
-    break
 
 
 sparse_lap_mat, eye_mat = Matrix(total_df).create_matrix()
 
-if __name__ == '__main__':
-    model = NGCF(n_user=n_user,
-                 n_item=n_item,
-                 embed_size=64,
-                 layer_size=[64, 64, 64],
-                 node_dropout=0.2,
-                 mess_dropout=[0.1, 0.1, 0.1],
-                 lap_mat=sparse_lap_mat,
-                 eye_mat=eye_mat,
-                 device='cpu').to(device=device)
-    optimizer = optim.Adam(model.parameters(), lr=1e-3)
-    criterion = BPR(weight_decay=0.025, batch_size=256)
+model = NGCF(n_user=n_user,
+             n_item=n_item,
+             embed_size=64,
+             layer_size=[64, 64, 64],
+             node_dropout=0.2,
+             mess_dropout=[0.1, 0.1, 0.1],
+             lap_mat=sparse_lap_mat,
+             eye_mat=eye_mat,
+             device='cpu').to(device=device)
 
-    test = Test(model=model,
-                dataframe=test_df,
-                dataloader=test_loader,
-                epochs=1,
-                ks=10,
-                device='cpu')
-    test.eval()
+if __name__ == '__main__':
+
+    optimizer = optim.Adam(model.parameters(), lr=1e-3)
+    criterion = BPR(weight_decay=0.025, batch_size=2048)
 
     train = Train(model=model,
                   optimizer=optimizer,
@@ -67,5 +51,18 @@ if __name__ == '__main__':
                   epochs=1,
                   device='cpu').train()
     print('train ended')
+
+    test = Test(model=model,
+                dataframe=test_df,
+                dataloader=test_loader,
+                ks=10,
+                device='cpu')
+    test.eval()
+
+
+
+
+
+
 
 

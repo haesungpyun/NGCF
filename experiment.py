@@ -8,7 +8,7 @@ import os
 import pandas as pd
 import numpy as np
 import time
-
+from sklearn.metrics import ndcg_score
 
 
 @gin.configurable
@@ -39,8 +39,6 @@ class Train():
                 t2 = time.time()
                 u_embeds, pos_i_embeds, neg_i_embeds = self.model(u_id, pos_item, neg_item, True)
 
-                break
-
                 self.optimizer.zero_grad()
                 loss = self.criterion(u_embeds, pos_i_embeds, neg_i_embeds)
                 loss.backward()
@@ -51,7 +49,7 @@ class Train():
                 print('|loss:{}|'.format((loss)))
                 print('|run time:{}|'.format(round(time.time()-t2, 4)))
                 b_i += 1
-            break
+
             print('|------------------------epoch loss------------------------|')
             print('|epoch loss: {}|'.format((total_loss/len(self.dataloader))))
             print('|run time:{}|'.format(round(time.time()-t1, 4)))
@@ -62,64 +60,33 @@ class Test():
                  model: nn.Module,
                  dataframe: pd.DataFrame,
                  dataloader: t.utils.data.DataLoader,
-                 epochs: int,
                  ks: int,
                  device='cpu'):
         self.model = model
         self.dataframe = dataframe
         self.dataloader = dataloader
-        self.epochs = epochs
         self.ks = ks
         self.device = device
+
 
     def eval(self):
         print("""-------------Evaluation--------------""")
         with t.no_grad():
-
             for u_id, pos_items in self.dataloader:
                 u_id, pos_items = u_id.to(self.device), pos_items.to(self.device)
 
                 u_embeds, pos_i_embeds, _ = self.model(users=u_id,
                                                        pos_items=pos_items,
                                                        neg_items=t.empty(0),
-                                                       node_flag=False).to(self.device)
+                                                       node_flag=False)
 
-                trained_scores = t.mm(u_embeds, pos_i_embeds.T)
-                _, train_idx = t.topk(trained_scores[0], self.ks)
-                recommend = train_idx
-                '''
-                pred_scores = t.mm(u_embeds, pos_i_embeds.T)
-                _, pred_idx = t.topk(pred_scores[0], self.ks)
-                print(pred_idx)
-                '''
+                pred_ratings = t.mm(u_embeds, pos_i_embeds.T)
+                _, pred_rank = t.topk(pred_ratings, self.ks)
 
+                gt_rank = pos_items.nonzero(as_tuple=True)[0]
 
+                my_metric = np.sum(np.abs(pred_rank-gt_rank).numpy()/np.log2(np.arange(len(gt_rank)+2, 2, -1)))
 
+                #ndcg = ndcg_score(gt_rank.numpy(), pred_rank.numpy())
 
-
-
-
-
-
-    def compute_ndcg_k(self, pred_items, test_items, test_indices, k):
-        """
-        Compute NDCG@k
-
-        Arguments:
-        ---------
-        pred_items: binary tensor with 1s in those locations corresponding to the predicted item interactions
-        test_items: binary tensor with 1s in locations corresponding to the real test interactions
-        test_indices: tensor with the location of the top-k predicted items
-        k: k'th-order
-        Returns:
-        -------
-        NDCG@k
-        Fork from https://github.com/metahexane/ngcf_pytorch_g61/blob/master/utils/helper_functions.py
-        """
-        r = (test_items * pred_items).gather(1, test_indices)
-        f = t.from_numpy(np.log2(np.arange(2, k + 2))).float().cuda()
-        dcg = (r[:, :k] / f).sum(1)
-        dcg_max = (t.sort(r, dim=1, descending=True)[0][:, :k] / f).sum(1)
-        ndcg = dcg / dcg_max
-        ndcg[t.isnan(ndcg)] = 0
-        return ndcg
+                print('my_metric:', my_metric)
