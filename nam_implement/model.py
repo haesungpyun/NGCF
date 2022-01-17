@@ -124,6 +124,6 @@ class NGCF(nn.Module):
         u_embeddings = self.all_users_emb[users - 1, :]
         pos_i_embeddings = self.all_items_emb[pos_items - 1, :]
         neg_i_embeddings = t.empty(0)
-        if node_flag:
+        if len(neg_items) > 0:
             neg_i_embeddings = self.all_items_emb[neg_items - 1, :]
         return u_embeddings, pos_i_embeddings, neg_i_embeddings

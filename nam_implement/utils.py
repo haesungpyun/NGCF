@@ -1,22 +1,13 @@
-'''
-Fork from https://github.com/changhyeonnam/NGCF/blob/master/utils.py
-'''
-
 import zipfile
-
-import gin
 from torch.utils.data import Dataset
 import torch
-import torch.nn as nn
-import torch.optim as optim
 import os
-import pandas as pd
+import pandas  as pd
 import numpy as np
 from zipfile import ZipFile
 import requests
 import sklearn
 import random
-
 
 class Download():
     def __init__(self,
@@ -39,10 +30,10 @@ class Download():
             if self.file_size_url == '10m':
                 self.file_url = 'ml-' + self.file_size_url
                 self.extracted_file_dir = 'ml-10M100K'
-            if self.file_size_url == '1m':
+            if self.file_size_url =='1m':
                 self.file_url = 'ml-' + self.file_size_url
 
-            if self.file_size_url == '10m':
+            if self.file_size_url=='10m':
                 self.fname = os.path.join(self.root, self.extracted_file_dir, 'ratings.dat')
             else:
                 self.fname = os.path.join(self.root, self.file_url, 'ratings.dat')
@@ -87,7 +78,7 @@ class Download():
             df = pd.read_csv(self.fname, sep=',')
         else:
             df = pd.read_csv(self.fname, sep="::", header=None,
-                             names=['userId', 'movieId', 'ratings', 'timestamp'])
+                               names=['userId', 'movieId', 'ratings', 'timestamp'])
         df = df.drop(columns=['timestamp'])
         print("Reading Complete!")
         return df
@@ -99,21 +90,11 @@ class Download():
         '''
         train_dataframe = self.df
         test_dataframe = None
-        '''
-        for i, s in self.df.groupby('userId'):
-            temp = s.sort_values('rating', ascending=False)[0:10]
-            temp2 = pd.concat((train_dataframe,temp))
-            train_dataframe = temp2.drop_duplicates(keep=False)
-            temp = pd.concat((test_dataframe, temp))
-            test_dataframe = temp.drop_duplicates(keep=False)
-        '''
-        for i in range(10):
+        for i in range(1):
             tmp_dataframe = train_dataframe.sample(frac=1).drop_duplicates(['userId'])
-            test_dataframe = pd.concat([tmp_dataframe, test_dataframe])
+            test_dataframe = pd.concat([tmp_dataframe,test_dataframe])
             tmp_dataframe2 = pd.concat([train_dataframe, tmp_dataframe])
             train_dataframe = tmp_dataframe2.drop_duplicates(keep=False)
-
-        test_dataframe = test_dataframe.sort_values(by=['userId', 'rating'], ascending=[True, False])
 
         # explicit feedback -> implicit feedback
         # ignore warnings
@@ -122,6 +103,7 @@ class Download():
         train_dataframe.loc[:, 'rating'] = 1
         test_dataframe.loc[:, 'rating'] = 1
 
+        test_dataframe = test_dataframe.sort_values(by=['userId'],axis=0)
         print(f"len(total): {len(self.df)}, len(train): {len(train_dataframe)}, len(test): {len(test_dataframe)}")
         return self.df, train_dataframe, test_dataframe,
 
@@ -130,8 +112,9 @@ class MovieLens(Dataset):
     def __init__(self,
                  df: pd.DataFrame,
                  total_df: pd.DataFrame,
-                 train: bool = False
-                 ) -> None:
+                 ng_ratio: int,
+                 train:bool=False,
+                 )->None:
         '''
         :param root: dir for download and train,test.
         :param file_size: large of small. if size if large then it will load(download) 20M dataset. if small then, it will load(download) 100K dataset.
@@ -142,7 +125,9 @@ class MovieLens(Dataset):
         self.df = df
         self.total_df = total_df
         self.train = train
+        self.ng_ratio = ng_ratio
         self.users, self.items = self._negative_sampling()
+        print(f'len items:{self.items.shape}')
 
     def __len__(self) -> int:
         '''
@@ -150,6 +135,7 @@ class MovieLens(Dataset):
         :return: len(data)
         '''
         return len(self.users)
+
 
     def __getitem__(self, index):
         '''
@@ -164,34 +150,48 @@ class MovieLens(Dataset):
         if self.train:
             return self.users[index], self.items[index][0], self.items[index][1]
         else:
-            return self.users[index], self.items[index][0]
+            return self.users[index], self.items[index]
 
-    def _negative_sampling(self):
+
+    def _negative_sampling(self) :
         '''
-        sampling one positive feedback per four negative feedback
+        sampling one positive feedback per one negative feedback
         :return: dataframe
         '''
         df = self.df
         total_df = self.total_df
         users, items = [], []
-        user_item_set = zip(df['userId'], df['movieId'])
-        if self.train is True:
-            user_item_set = set(zip(df['userId'], df['movieId']))
-        total_user_item_set = set(zip(total_df['userId'], total_df['movieId']))
+        user_item_set = set(zip(df['userId'], df['movieId']))
+        total_user_item_set = set(zip(total_df['userId'],total_df['movieId']))
         all_movieIds = total_df['movieId'].unique()
         # negative feedback dataset ratio
         for u, i in user_item_set:
             # positive instance
+            visit = []
             item = []
-            item.append(i)
-            # negative instance
-            if self.train:
+            if not self.train:
+                items.append(i)
+                users.append(u)
+            else:
+                item.append(i)
+
+            for k in range(self.ng_ratio):
+                # negative instance
                 negative_item = np.random.choice(all_movieIds)
                 # check if item and user has interaction, if true then set new value from random
-                while (u, negative_item) in total_user_item_set:
+                while (u, negative_item) in total_user_item_set or negative_item in visit:
                     negative_item = np.random.choice(all_movieIds)
-                item.append(negative_item)
-            items.append(item)
-            users.append(u)
-        print(f"sampled data: {len(users)}")
+
+                if self.train:
+                    item.append(negative_item)
+                    visit.append(negative_item)
+                else:
+                    items.append(negative_item)
+                    visit.append(negative_item)
+                    users.append(u)
+
+            if self.train:
+                items.append(item)
+                users.append(u)
+
         return torch.tensor(users), torch.tensor(items)

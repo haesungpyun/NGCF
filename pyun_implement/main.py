@@ -14,7 +14,7 @@ from experiment import Train, Test
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f'device: {device}')
 
-root_path = 'dataset'
+root_path = '../dataset'
 dataset = Download(root=root_path, file_size='100k', download=False)
 total_df, train_df, test_df = dataset.split_train_test()
 n_user = total_df['userId'].max()
@@ -23,7 +23,7 @@ n_item = total_df['movieId'].max()
 train_set = MovieLens(train_df, total_df, train=True)
 test_set = MovieLens(test_df, total_df, train=False)
 
-train_loader = DataLoader(train_set, batch_size=2048, shuffle=True)
+train_loader = DataLoader(train_set, batch_size=4096, shuffle=True)
 test_loader = DataLoader(test_set, batch_size=10, shuffle=False)
 
 
@@ -42,18 +42,18 @@ model = NGCF(n_user=n_user,
 if __name__ == '__main__':
 
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
-    criterion = BPR(weight_decay=0.025, batch_size=2048)
+    criterion = BPR(weight_decay=0.025, batch_size=4096)
 
     train = Train(model=model,
                   optimizer=optimizer,
                   criterion=criterion,
-                  dataloader=train_loader,
-                  epochs=1,
+                  train_dataloader=train_loader,
+                  test_dataloader=test_loader,
+                  epochs=10,
                   device='cpu').train()
     print('train ended')
 
     test = Test(model=model,
-                dataframe=test_df,
                 dataloader=test_loader,
                 ks=10,
                 device='cpu')
