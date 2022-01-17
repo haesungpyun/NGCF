@@ -110,4 +110,6 @@ class Test():
                 HR.append(self.hit(gt_item=gt_rank, pred_items=pred_rank))
                 NDCG.append(self.Ndcg(gt_item=gt_rank, pred_items=pred_rank))
 
+        print('HR:{}, NDCG:{}'.format(np.mean(HR), np.mean(NDCG)))
+
 
