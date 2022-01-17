@@ -2,7 +2,6 @@ import gin
 from torch.utils.data import Dataset
 import torch as t
 import torch.nn as nn
-import evaluation
 import torch.optim as optim
 import os
 import pandas as pd
