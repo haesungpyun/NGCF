@@ -7,3 +7,4 @@ parser.add_argument('-lr', '--lr', default=1e-3, type=float,help='learning rate 
 parser.add_argument('-dl','--download',type=str,default='False',help='Download or not')
 parser.add_argument('-k','--ks',type=int,default=10,help='choose top@k for NDCG@k, HR@k')
 parser.add_argument('-fi','--file_size',type=str,default='100k',help='choose file size, [100k,1m,10m,20m]')
+args = parser.parse_args()
