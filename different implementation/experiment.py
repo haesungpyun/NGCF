@@ -90,10 +90,13 @@ class Test():
                 pred_ratings = t.mm(u_embeds, pos_i_embeds.T)
                 _, pred_rank = t.topk(pred_ratings[0], self.ks)
 
+                recommends = t.take(
+                    pos_items, pred_rank).cpu().numpy().tolist()
+
                 gt_rank = pos_items[0].item()
 
-                HR.append(self.hit(gt_item=gt_rank, pred_items=pred_rank))
-                NDCG.append(self.Ndcg(gt_item=gt_rank, pred_items=pred_rank))
+                HR.append(self.hit(gt_item=gt_rank, pred_items=recommends))
+                NDCG.append(self.Ndcg(gt_item=gt_rank, pred_items=recommends))
 
         print('HR:{}, NDCG:{}'.format(np.mean(HR), np.mean(NDCG)))
 
