@@ -4,7 +4,7 @@ import torch.nn as nn
 import os
 import numpy as np
 import time
-
+from parser import args
 
 class Train():
     def __init__(self,
@@ -14,11 +14,11 @@ class Train():
                  train_dataloader: t.utils.data.DataLoader,
                  test_dataloader: t.utils.data.DataLoader,
                  epochs: int,
-                 device=device):
+                 device):
         self.model = model
         self.optimizer = optimizer
         self.criterion = criterion
-        self.trani_dataloader = train_dataloader
+        self.train_dataloader = train_dataloader
         self.test_dataloader = test_dataloader
         self.epochs = epochs
         self.device = device
@@ -28,13 +28,10 @@ class Train():
 
             t1 = time.time()
             total_loss = 0
-            print('------------------------epoch {}------------------------'.format(epoch+1))
-            b_i = 0
-            for u_id, pos_item, neg_item in self.trani_dataloader:
-                t2 = time.time()
-                u_embeds, pos_i_embeds, neg_i_embeds = self.model(u_id, pos_item, neg_item, True)
 
-                break
+            for u_id, pos_item, neg_item in self.train_dataloader:
+                users, pos_items, neg_items = users.to(self.device), pos_items.to(self.device), neg_items.to(self.device)
+                u_embeds, pos_i_embeds, neg_i_embeds = self.model(u_id, pos_item, neg_item, True)
 
                 self.optimizer.zero_grad()
                 loss = self.criterion(u_embeds, pos_i_embeds, neg_i_embeds)
@@ -42,18 +39,14 @@ class Train():
                 self.optimizer.step()
                 total_loss += loss
 
-                print('|-------mini batch {} loss-------|'.format(b_i+1))
-                print('|loss:{}|'.format((loss)))
-                print('|run time:{}|'.format(round(time.time()-t2, 4)))
-                b_i += 1
+            print('epoch {}'.format(epoch + 1))
 
             test = Test(model=self.model,
                         dataloader=self.test_dataloader,
-                        ks=10,
-                        device=device)
+                        ks=args.ks,
+                        device=self.device)
 
-            print('|------------------------epoch loss------------------------|')
-            print('|epoch loss: {} run time:{}|'.format((total_loss/len(self.trani_dataloader)), round(time.time()-t1, 4)))
+            print('|epoch loss: {} run time:{}|'.format((total_loss/len(self.train_dataloader)), round(time.time()-t1, 4)))
             test.eval()
 
 
@@ -62,7 +55,7 @@ class Test():
                  model: nn.Module,
                  dataloader: t.utils.data.DataLoader,
                  ks: int,
-                 device=device):
+                 device):
         self.model = model
         self.dataloader = dataloader
         self.ks = ks
@@ -86,8 +79,6 @@ class Test():
         NDCG = []
         HR = []
         with t.no_grad():
-            t2 = time.time()
-            eval_score = 0
             for u_id, pos_items in self.dataloader:
                 u_id, pos_items = u_id.to(self.device), pos_items.to(self.device)
 

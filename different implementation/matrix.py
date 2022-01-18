@@ -9,8 +9,9 @@ class Matrix(object):
     """
     Manage all operations according to Matrix creation
     """
-    def __init__(self, df: pd.DataFrame):
+    def __init__(self, df: pd.DataFrame, device):
         self.df = df
+        self.device = device
         self.n_user = df['userId'].max()
         self.n_item = df['movieId'].max()
 
@@ -39,8 +40,8 @@ class Matrix(object):
         d_mat_inv = sp.diags(d_sqrt)
         self.laplacian_mat = d_mat_inv.dot(self.adj_mat).dot(d_mat_inv)
 
-        self.sparse_norm_adj = self._convert_sp_mat_to_sp_tensor(self.laplacian_mat)
-        self.eye_mat = self._convert_sp_mat_to_sp_tensor(sp.eye(self.sparse_norm_adj.shape[0]))
+        self.sparse_norm_adj = self._convert_sp_mat_to_sp_tensor(self.laplacian_mat).to(device=self.device)
+        self.eye_mat = self._convert_sp_mat_to_sp_tensor(sp.eye(self.sparse_norm_adj.shape[0])).to(device=self.device)
         return self.sparse_norm_adj, self.eye_mat
 
     def _convert_sp_mat_to_sp_tensor(self, matrix_sp):

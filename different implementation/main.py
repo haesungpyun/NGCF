@@ -25,7 +25,7 @@ test_set = MovieLens(test_df, total_df, train=False, ng_ratio=99)
 train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True)
 test_loader = DataLoader(test_set, batch_size=10, shuffle=False)
 
-sparse_lap_mat, eye_mat = Matrix(df=total_df).create_matrix()
+sparse_lap_mat, eye_mat = Matrix(df=total_df, device=device).create_matrix()
 
 model = NGCF(n_user=n_user,
              n_item=n_item,
@@ -47,8 +47,9 @@ if __name__ == '__main__':
                   criterion=criterion,
                   train_dataloader=train_loader,
                   test_dataloader=test_loader,
-                  epochs=10,
-                  device=device).train()
+                  epochs=args.epoch,
+                  device=device)
+    train.train()
     print('train ended')
 
     test = Test(model=model,
