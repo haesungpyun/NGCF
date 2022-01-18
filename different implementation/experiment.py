@@ -14,7 +14,7 @@ class Train():
                  train_dataloader: t.utils.data.DataLoader,
                  test_dataloader: t.utils.data.DataLoader,
                  epochs: int,
-                 device='cpu'):
+                 device=device):
         self.model = model
         self.optimizer = optimizer
         self.criterion = criterion
@@ -50,7 +50,7 @@ class Train():
             test = Test(model=self.model,
                         dataloader=self.test_dataloader,
                         ks=10,
-                        device='cpu')
+                        device=device)
 
             print('|------------------------epoch loss------------------------|')
             print('|epoch loss: {} run time:{}|'.format((total_loss/len(self.trani_dataloader)), round(time.time()-t1, 4)))
@@ -62,7 +62,7 @@ class Test():
                  model: nn.Module,
                  dataloader: t.utils.data.DataLoader,
                  ks: int,
-                 device='cpu'):
+                 device=device):
         self.model = model
         self.dataloader = dataloader
         self.ks = ks

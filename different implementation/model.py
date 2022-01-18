@@ -14,7 +14,7 @@ class NGCF(nn.Module):
                  mess_dropout: list,
                  lap_mat: t.sparse.FloatTensor,
                  eye_mat: t.sparse.FloatTensor,
-                 device='cpu'):
+                 device=device):
         super(NGCF, self).__init__()
 
         self.n_user = n_user
