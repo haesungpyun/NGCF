@@ -30,7 +30,7 @@ class Train():
             total_loss = 0
 
             for u_id, pos_item, neg_item in self.train_dataloader:
-                users, pos_items, neg_items = users.to(self.device), pos_items.to(self.device), neg_items.to(self.device)
+                u_id, pos_item, neg_item = u_id.to(self.device), pos_item.to(self.device), neg_item.to(self.device)
                 u_embeds, pos_i_embeds, neg_i_embeds = self.model(u_id, pos_item, neg_item, True)
 
                 self.optimizer.zero_grad()
