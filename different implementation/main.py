@@ -9,6 +9,7 @@ from bprloss import BPR
 from experiment import Train, Test
 from parser import args
 
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f'device: {device}')
 
