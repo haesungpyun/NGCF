@@ -34,7 +34,7 @@ model = NGCF(n_user=n_user,
              mess_dropout=[0.1, 0.1, 0.1],
              lap_mat=sparse_lap_mat,
              eye_mat=eye_mat,
-             device='cpu').to(device=device)
+             device=device).to(device=device)
 
 if __name__ == '__main__':
 
@@ -47,13 +47,13 @@ if __name__ == '__main__':
                   train_dataloader=train_loader,
                   test_dataloader=test_loader,
                   epochs=10,
-                  device='cpu').train()
+                  device=device).train()
     print('train ended')
 
     test = Test(model=model,
                 dataloader=test_loader,
                 ks=args.ks,
-                device='cpu')
+                device=device)
 
 
 
