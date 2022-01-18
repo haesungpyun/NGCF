@@ -4,7 +4,6 @@ import torch.nn.functional as F
 import numpy as np
 
 
-
 class NGCF(nn.Module):
     def __init__(self,
                  n_user: int,
