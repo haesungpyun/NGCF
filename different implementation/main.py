@@ -1,21 +1,19 @@
 import torch
 from torch.utils.data import DataLoader
 import torch.optim as optim
-import time
-import numpy as np
-
 from utils import MovieLens
 from utils import Download
 from matrix import Matrix
 from model import NGCF
 from bprloss import BPR
 from experiment import Train, Test
+from parser import args
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f'device: {device}')
 
 root_path = '../dataset'
-dataset = Download(root=root_path, file_size='100k', download=False)
+dataset = Download(root=root_path, file_size=args.file_size, download=args.download)
 total_df, train_df, test_df = dataset.split_train_test()
 n_user = total_df['userId'].max()
 n_item = total_df['movieId'].max()
@@ -23,10 +21,10 @@ n_item = total_df['movieId'].max()
 train_set = MovieLens(train_df, total_df, train=True, ng_ratio=1)
 test_set = MovieLens(test_df, total_df, train=False, ng_ratio=99)
 
-train_loader = DataLoader(train_set, batch_size=4096, shuffle=True)
+train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True)
 test_loader = DataLoader(test_set, batch_size=10, shuffle=False)
 
-sparse_lap_mat, eye_mat = Matrix(total_df).create_matrix()
+sparse_lap_mat, eye_mat = Matrix(df=total_df).create_matrix()
 
 model = NGCF(n_user=n_user,
              n_item=n_item,
@@ -40,8 +38,8 @@ model = NGCF(n_user=n_user,
 
 if __name__ == '__main__':
 
-    optimizer = optim.Adam(model.parameters(), lr=1e-3)
-    criterion = BPR(weight_decay=0.025, batch_size=4096)
+    optimizer = optim.Adam(model.parameters(), lr=args.lr)
+    criterion = BPR(weight_decay=0.025, batch_size=args.batch_size)
 
     train = Train(model=model,
                   optimizer=optimizer,
@@ -54,9 +52,9 @@ if __name__ == '__main__':
 
     test = Test(model=model,
                 dataloader=test_loader,
-                ks=10,
+                ks=args.ks,
                 device='cpu')
-    test.eval()
+
 
 
 

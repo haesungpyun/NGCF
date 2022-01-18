@@ -17,5 +17,3 @@ class BPR(nn.Module):
         regularization = self.weight_decay * (u_idx.norm(dim=1).pow(2).sum() +
                                               pos_idx.norm(dim=1).pow(2).sum() + neg_idx.norm(dim=1).pow(2).sum())
         return (-log_prob + regularization) / self.batch_size
-
-

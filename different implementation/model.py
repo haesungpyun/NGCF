@@ -2,15 +2,9 @@ import torch as t
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-import scipy.sparse as sp
-import gin
-from utils import MovieLens
-from utils import Download
-from matrix import Matrix
-import torch
 
 
-@gin.configurable()  # model에 인풋 넣을 떼 n_users, n_itmes에 1 더하기!
+
 class NGCF(nn.Module):
     def __init__(self,
                  n_user: int,

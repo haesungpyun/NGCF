@@ -1,16 +1,12 @@
-import gin
+import gin.torch
 from torch.utils.data import Dataset
 import torch as t
 import torch.nn as nn
-import torch.optim as optim
 import os
-import pandas as pd
 import numpy as np
 import time
-from sklearn.metrics import ndcg_score
 
 
-@gin.configurable
 class Train():
     def __init__(self,
                  model: nn.Module,

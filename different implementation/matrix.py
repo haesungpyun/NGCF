@@ -4,6 +4,7 @@ import scipy.sparse as sp
 import numpy as np
 
 
+
 class Matrix(object):
     """
     Manage all operations according to Matrix creation

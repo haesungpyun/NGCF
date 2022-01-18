@@ -1,13 +1,11 @@
-import zipfile
 from torch.utils.data import Dataset
 import torch
 import os
-import pandas  as pd
+import pandas as pd
 import numpy as np
 from zipfile import ZipFile
 import requests
-import sklearn
-import random
+
 
 class Download():
     def __init__(self,
