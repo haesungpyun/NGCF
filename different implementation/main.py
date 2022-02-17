@@ -7,14 +7,14 @@ from matrix import Matrix
 from model import NGCF
 from bprloss import BPR
 from experiment import Train, Test
-from parser import args
+from parsers_ngcf import args
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f'device: {device}')
 
 root_path = '../dataset'
-dataset = Download(root=root_path, file_size=args.file_size, download=args.download)
+dataset = Download(root=root_path, file_size=args.file_size, download=False)
 total_df, train_df, test_df = dataset.split_train_test()
 n_user = total_df['userId'].max()
 n_item = total_df['movieId'].max()
@@ -23,7 +23,7 @@ train_set = MovieLens(train_df, total_df, train=True, ng_ratio=1)
 test_set = MovieLens(test_df, total_df, train=False, ng_ratio=99)
 
 train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True)
-test_loader = DataLoader(test_set, batch_size=10, shuffle=False)
+test_loader = DataLoader(test_set, batch_size=100, shuffle=False)
 
 sparse_lap_mat, eye_mat = Matrix(df=total_df, device=device).create_matrix()
 

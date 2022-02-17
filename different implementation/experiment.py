@@ -3,8 +3,8 @@ import torch as t
 import torch.nn as nn
 import os
 import numpy as np
-import time
-from parser import args
+
+from parsers_ngcf import args
 
 class Train():
     def __init__(self,
@@ -26,13 +26,11 @@ class Train():
     def train(self):
         for epoch in range(self.epochs):
 
-            t1 = time.time()
             total_loss = 0
 
             for u_id, pos_item, neg_item in self.train_dataloader:
                 u_id, pos_item, neg_item = u_id.to(self.device), pos_item.to(self.device), neg_item.to(self.device)
                 u_embeds, pos_i_embeds, neg_i_embeds = self.model(u_id, pos_item, neg_item, True)
-
                 self.optimizer.zero_grad()
                 loss = self.criterion(u_embeds, pos_i_embeds, neg_i_embeds)
                 loss.backward()
@@ -46,7 +44,7 @@ class Train():
                         ks=args.ks,
                         device=self.device)
 
-            print('|epoch loss: {} run time:{}|'.format((total_loss/len(self.train_dataloader)), round(time.time()-t1, 4)))
+            print('|epoch loss: {}|'.format((total_loss/len(self.train_dataloader))))
             test.eval()
 
 
